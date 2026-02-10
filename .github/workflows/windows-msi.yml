@@ -1,0 +1,40 @@
+name: Build Custom RustDesk MSI
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout repo (with submodules)
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+
+    - name: Install Rust
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        override: true
+
+    - name: Install build dependencies
+      run: |
+        choco install llvm nasm strawberryperl -y
+
+    - name: Build RustDesk (release)
+      run: cargo build --release
+
+    - name: Build MSI
+      run: |
+        cd res/msi
+        .\build.ps1
+
+    - name: Upload MSI artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: Custom-RustDesk-MSI
+        path: res/msi/output/*.msi
